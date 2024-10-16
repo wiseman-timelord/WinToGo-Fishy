@@ -104,11 +104,11 @@ function Partition-USB {
     $diskPartScript = @"
 select disk $DriveNumber
 clean
-$($PartitionType -eq 'GPT' ? 'convert gpt' : 'convert mbr')
+$(if ($PartitionType -eq 'GPT') { "convert gpt" } else { "convert mbr" })
 create partition primary
 format fs=ntfs quick label="Windows To Go"
 assign
-$($PartitionType -eq 'GPT' ? 'set id="ebd0a0a2-b9e5-4433-87c0-68b6b72699c7"' : 'active')
+$(if ($PartitionType -eq 'GPT') { "set id=`"ebd0a0a2-b9e5-4433-87c0-68b6b72699c7`"" } else { "active" })
 exit
 "@
 
