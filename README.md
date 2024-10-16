@@ -14,4 +14,4 @@ Its `Windows To Go`, but it will work with any Windows 8.1/10 Enterprise Iso. Fo
 - There is the batch, the batch runs the powershell script, magic happens.
 
 ### Notation:
-- if this works, it will likely be merged with some other project later. 
+- if this works, it will likely be merged with some other project later, to create a swiss army knife.
