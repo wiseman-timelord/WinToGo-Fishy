@@ -10,6 +10,7 @@ Its `Windows To Go`, but it will work with any Windows 8.1/10 Enterprise Iso. Fo
 
 ### Requirements:
 - Windows 8.1/10 Enterprise (Windows 10 Enterprise should be <=1909).
+- Powershell 5, so as, immediately compatible with Windows 10 and Compatible with Windows 8.1 with update.
 
 ### Instruction:
 - There is the batch, the batch runs the powershell script, magic happens.
