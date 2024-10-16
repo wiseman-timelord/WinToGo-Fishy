@@ -8,24 +8,27 @@ function Check-Administrator {
     }
 }
 
+# Display banner
+function Show-Banner {
+    param ([string]$Title)
+    Clear-Host
+    Write-Host ("=" * 80)
+    Write-Host "    $Title".PadRight(80)
+    Write-Host ("=" * 80)
+}
+
 # Display menu prompt
 function Show-Prompt {
-    param (
-        [string]$Message,
-        [string]$MenuOptions = "1-#, Exit = X"
-    )
-    
-    Write-Host "========================="
-    Write-Host $Message
-    Write-Host "========================="
-    Write-Host "Select $MenuOptions"
+    param ([string]$MenuOptions = "1-#")
+    Write-Host ("=" * 80)
+    Write-Host "Selection; Menu Options = $MenuOptions, Exit Program = X: " -NoNewline
 }
 
 # Check for exit
 function Check-ForExit {
     param ([string]$input)
     if ($input -eq 'X') {
-        Write-Host "Exiting..." -ForegroundColor Yellow
+        Show-Banner "Exiting Program"
         Exit
     }
 }
@@ -44,9 +47,9 @@ function Check-CommandStatus {
 
 # Select Windows image
 function Select-WindowsImage {
+    Show-Banner "Select Windows Image"
     do {
-        Show-Prompt -Message "Enter ISO/WIM path"
-        $imagePath = Read-Host "Path (X to exit)"
+        $imagePath = Read-Host "Enter ISO/WIM path (X to exit)"
         Check-ForExit $imagePath
 
         if (-not (Test-Path $imagePath)) {
@@ -65,8 +68,8 @@ function Select-WindowsImage {
 
 # Detect USB drives
 function Detect-USBDrives {
+    Show-Banner "Detect USB Drives"
     do {
-        Show-Prompt -Message "Detecting USB drives"
         $usbDrives = Get-Disk | Where-Object { $_.BusType -eq 'USB' }
 
         if ($usbDrives.Count -eq 0) {
@@ -76,12 +79,12 @@ function Detect-USBDrives {
             continue
         }
 
-        Write-Host "USB drives:"
+        Write-Host "    Drives:"
         $usbDrives | ForEach-Object { 
-            Write-Host "Drive $($_.Number): $([math]::Round($_.Size / 1GB, 2)) GB"
+            Write-Host "$($_.Number): USB - $([math]::Round($_.Size / 1GB, 2)) GB"
         }
 
-        $usbDrive = Read-Host "Enter drive number"
+        $usbDrive = Read-Host "Enter drive number (X to exit)"
         Check-ForExit $usbDrive
 
         if ($usbDrive -notin $usbDrives.Number) {
@@ -100,6 +103,7 @@ function Partition-USB {
         [string]$PartitionType
     )
 
+    Show-Banner "Partition USB Drive"
     Write-Host "Formatting USB"
     $diskPartScript = @"
 select disk $DriveNumber
@@ -133,6 +137,7 @@ function Apply-WindowsImage {
         [string]$DriveLetter
     )
 
+    Show-Banner "Apply Windows Image"
     Write-Host "Applying image"
     $dismCommand = "dism /apply-image /imagefile:`"$ImagePath`" /index:1 /applydir:${DriveLetter}:"
     $dismProcess = Start-Process -FilePath "dism.exe" -ArgumentList $dismCommand -Wait -PassThru -NoNewWindow
@@ -143,6 +148,7 @@ function Apply-WindowsImage {
 function Configure-Bootloader {
     param ([string]$DriveLetter)
 
+    Show-Banner "Configure Bootloader"
     Write-Host "Configuring bootloader"
     $bcdCommand = "bcdboot ${DriveLetter}:\Windows /s ${DriveLetter}: /f ALL"
     $bcdProcess = Start-Process -FilePath "bcdboot.exe" -ArgumentList $bcdCommand -Wait -PassThru -NoNewWindow
@@ -151,6 +157,17 @@ function Configure-Bootloader {
 
 # Create Windows To Go USB
 function Create-WindowsToGoUSB {
+    Show-Banner "Create WinToGo Bootable"
+    
+    Write-Host "    Drives:"
+    Get-Volume | ForEach-Object {
+        Write-Host "$($_.DriveLetter): - $($_.DriveType)"
+    }
+    
+    Write-Host "`n    Current Configuration:"
+    Write-Host "Partition Type: $script:partitionType"
+    
+    Write-Host ("`n" + "-" * 80)
     $script:windowsImage = Select-WindowsImage
     $script:usbDrive = Detect-USBDrives
     if (-not $usbDrive) {
@@ -160,38 +177,46 @@ function Create-WindowsToGoUSB {
     $script:driveLetter = Partition-USB -DriveNumber $usbDrive -PartitionType $script:partitionType
     Apply-WindowsImage -ImagePath $windowsImage -DriveLetter $driveLetter
     Configure-Bootloader -DriveLetter $driveLetter
+    
     Write-Host "Windows To Go created" -ForegroundColor Green
+    Pause
 }
 
 # Show configuration
 function Show-Configuration {
-    Write-Host "Current Configuration:"
+    Show-Banner "Current Configuration"
     Write-Host "Image: $script:windowsImage"
     Write-Host "USB Drive: $script:usbDrive"
     Write-Host "Drive Letter: $script:driveLetter"
     Write-Host "Partition Type: $script:partitionType"
+    Pause
 }
 
 # View logs (placeholder)
 function View-Logs {
+    Show-Banner "View Logs"
     Write-Host "Logs not implemented" -ForegroundColor Yellow
     Write-Host "Check Event Viewer" -ForegroundColor Yellow
+    Pause
 }
 
 # Set partition type
 function Set-PartitionType {
+    Show-Banner "Set Partition Type"
     do {
-        Show-Prompt -Message "Select partition type" -MenuOptions "1-2, Back = B"
+        Write-Host "`n`n"
         Write-Host "1. MBR"
+        Write-Host "`n"
         Write-Host "2. GPT"
-
-        $choice = Read-Host "Choice"
+        Write-Host "`n`n"
+        Write-Host "`nCurrent: $script:partitionType"
+        Show-Prompt "1-2"
+        $choice = Read-Host
         Check-ForExit $choice
 
         switch ($choice) {
             1 { $script:partitionType = 'MBR'; return }
             2 { $script:partitionType = 'GPT'; return }
-            'B' { return }
             default { Write-Host "Invalid choice" -ForegroundColor Red }
         }
     } while ($true)
@@ -200,24 +225,24 @@ function Set-PartitionType {
 # Tools and Extras
 function Show-ToolsAndExtras {
     do {
-        Show-Prompt -Message "Tools and Extras" -MenuOptions "1-3, Back = B"
-        Write-Host "1. View Logs"
-        Write-Host "2. Set Partition Type"
-        Write-Host "3. Current Configuration"
+        Show-Banner "Tools and Extras"
+        Write-Host "`n`n"
+        Write-Host "    1. View Logs"
+        Write-Host "`n"
+        Write-Host "    2. Set Partition Type"
+        Write-Host "`n"
+        Write-Host "    3. Current Configuration"
+        Write-Host "`n`n"
+        Show-Prompt
+        $extraChoice = Read-Host
 
-        $extraChoice = Read-Host "Choice"
         Check-ForExit $extraChoice
 
         switch ($extraChoice) {
             1 { View-Logs }
             2 { Set-PartitionType }
             3 { Show-Configuration }
-            'B' { return }
             default { Write-Host "Invalid choice" -ForegroundColor Red }
-        }
-
-        if ($extraChoice -in @('1', '2', '3')) {
-            Pause
         }
     } while ($true)
 }
@@ -231,20 +256,20 @@ $script:driveLetter = $null
 $script:partitionType = 'GPT'
 
 do {
-    Show-Prompt -Message "Windows To Go Creator" -MenuOptions "1-2, Exit = X"
-    Write-Host "1. Create Windows To Go"
-    Write-Host "2. Tools and Extras"
+    Show-Banner "Windows To Go Creator"
+    Write-Host "`n`n"
+    Write-Host "    1. Create WinToGo Bootable"
+    Write-Host "`n"
+    Write-Host "    2. Tools and Extras"
+    Write-Host "`n`n"
+    Show-Prompt
+    $mainChoice = Read-Host
 
-    $mainChoice = Read-Host "Choice"
     Check-ForExit $mainChoice
 
     switch ($mainChoice) {
         1 { Create-WindowsToGoUSB }
         2 { Show-ToolsAndExtras }
         default { Write-Host "Invalid choice" -ForegroundColor Red }
-    }
-
-    if ($mainChoice -eq '1') {
-        Pause
     }
 } while ($true)
