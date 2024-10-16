@@ -2,7 +2,7 @@
 Status: Alpha - Very early stage, do not use.
 
 ### Description:
-Its `Windows To Go`, but it will work with any Windows 8.1/10 Iso. For those that dont know it, `Windows To Go` is the much raved about thing, where you can run Windows off a Usb, but who actually has done this? Due to the control over what Isos it can be done with, limits most people whom take the time to try, to ending up giving up on the idea. Additionally, what makes Windows on a Usb a good idea specifically now, is the abundance of `External USB =>150MB/s nVMe drives` currently. 
+Its `Windows To Go`, but it will work with any Windows 8.1/10 Enterprise Iso. For those that dont know it, `Windows To Go` is the much raved about thing, where you can run Windows off a Usb, but who actually has done this? Due to the control over what Isos it can be done with, limits most people whom take the time to try, to ending up giving up on the idea. Additionally, what makes Windows on a Usb a good idea specifically now, is the abundance of `External USB =>150MB/s nVMe drives` currently. 
 
 ### Requirements:
 - Windows 8.1/10 Enterprise (Windows 10 Enterprise should be <=1909).
